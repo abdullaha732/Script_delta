@@ -10,38 +10,103 @@ local normalSpeed = humanoid.WalkSpeed
 -- سرعة ثابتة 100
 local insaneSpeed = 100
 
-game:GetService("RunService").Stepped:Connect(function()
-	if noclip and char then
-		for _, part in pairs(char:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.CanCollide = false
-			end
-		end
-	end
+-- متغير لتتبع حالة الإختفاء
+local isCurrentlyInvisible = false
+
+-- وظيفة لجعل الشخصية غير مرئية بالكامل
+local function makeInvisible()
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 1
+            part.CastShadow = false
+        elseif part:IsA("Decal") or part:IsA("Texture") then
+            part.Transparency = 1
+        elseif part:IsA("Accessory") then
+            part.Handle.Transparency = 1
+        end
+    end
+    
+    -- إخفاء الاسم والعلامات
+    humanoid.NameDisplayDistance = 0
+    humanoid.HealthDisplayDistance = 0
+    
+    -- إخفاء تأثيرات الحركة
+    if char:FindFirstChild("Animate") then
+        char.Animate:Destroy()
+    end
+    
+    -- إخفاء الفيزياء
+    if char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.Transparency = 1
+    end
+    
+    isCurrentlyInvisible = true
+end
+
+-- وظيفة لجعل الشخصية مرئية
+local function makeVisible()
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 0
+            part.CastShadow = true
+        elseif part:IsA("Decal") or part:IsA("Texture") then
+            part.Transparency = 0
+        elseif part:IsA("Accessory") then
+            part.Handle.Transparency = 0
+        end
+    end
+    
+    -- إظهار الاسم والعلامات
+    humanoid.NameDisplayDistance = 100
+    humanoid.HealthDisplayDistance = 100
+    
+    isCurrentlyInvisible = false
+end
+
+-- التحقق من الشخصية الجديدة عند الموت
+player.CharacterAdded:Connect(function(newChar)
+    char = newChar
+    humanoid = char:WaitForChild("Humanoid")
+    
+    -- إعادة تطبيق الإختفاء إذا كان مفعلاً
+    if invisible then
+        humanoid.Died:Connect(function()
+            -- عند الموت، ننتظر حتى يتم إعادة توليد الشخصية
+            player.CharacterAdded:Wait()
+            if invisible then
+                makeInvisible()
+            end
+        end)
+        
+        makeInvisible()
+    end
+    
+    -- إعادة تطبيق السرعة إذا كانت مفعّلة
+    if fast then
+        humanoid.WalkSpeed = insaneSpeed
+    else
+        humanoid.WalkSpeed = normalSpeed
+    end
 end)
 
-local function makeInvisible()
-	for _, part in pairs(char:GetDescendants()) do
-		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-			part.Transparency = 1
-		elseif part:IsA("Decal") then
-			part.Transparency = 1
-		end
-	end
-	humanoid.NameDisplayDistance = 0
-end
+game:GetService("RunService").Stepped:Connect(function()
+    if noclip and char then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+    
+    -- الحفاظ على حالة الإختفاء
+    if invisible and not isCurrentlyInvisible and char then
+        makeInvisible()
+    elseif not invisible and isCurrentlyInvisible and char then
+        makeVisible()
+    end
+end)
 
-local function makeVisible()
-	for _, part in pairs(char:GetDescendants()) do
-		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-			part.Transparency = 0
-		elseif part:IsA("Decal") then
-			part.Transparency = 0
-		end
-	end
-	humanoid.NameDisplayDistance = 100
-end
-
+-- إنشاء واجهة المستخدم
 local screenGui = Instance.new("ScreenGui", player.PlayerGui)
 screenGui.Name = "HackGui"
 
@@ -89,29 +154,30 @@ speedBtn.Font = Enum.Font.Gotham
 speedBtn.TextSize = 14
 
 noclipBtn.MouseButton1Click:Connect(function()
-	noclip = not noclip
-	noclipBtn.Text = "Noclip: "..(noclip and "ON" or "OFF")
-	noclipBtn.BackgroundColor3 = noclip and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
+    noclip = not noclip
+    noclipBtn.Text = "Noclip: "..(noclip and "ON" or "OFF")
+    noclipBtn.BackgroundColor3 = noclip and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
 end)
 
 invisBtn.MouseButton1Click:Connect(function()
-	invisible = not invisible
-	invisBtn.Text = "Invisible: "..(invisible and "ON" or "OFF")
-	invisBtn.BackgroundColor3 = invisible and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
-	if invisible then
-		makeInvisible()
-	else
-		makeVisible()
-	end
+    invisible = not invisible
+    invisBtn.Text = "Invisible: "..(invisible and "ON" or "OFF")
+    invisBtn.BackgroundColor3 = invisible and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
+    
+    if invisible then
+        makeInvisible()
+    else
+        makeVisible()
+    end
 end)
 
 speedBtn.MouseButton1Click:Connect(function()
-	fast = not fast
-	speedBtn.Text = "Speed: "..(fast and "ON" or "OFF")
-	speedBtn.BackgroundColor3 = fast and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
-	if fast then
-		humanoid.WalkSpeed = insaneSpeed
-	else
-		humanoid.WalkSpeed = normalSpeed
-	end
+    fast = not fast
+    speedBtn.Text = "Speed: "..(fast and "ON" or "OFF")
+    speedBtn.BackgroundColor3 = fast and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
+    if fast then
+        humanoid.WalkSpeed = insaneSpeed
+    else
+        humanoid.WalkSpeed = normalSpeed
+    end
 end)
