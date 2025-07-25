@@ -1,6 +1,6 @@
 --[[
-  ⚡ السكربت النهائي للسرعة + القفز + ميزات إضافية ⚡
-  تم التحديث والإصلاح مع واجهة تحكم كاملة
+  � سكربت السرعة الذكية للآيباد 🍏
+  يدعم شاشات اللمس + لوحة المفاتيح مع ميزات متقدمة
 ]]
 
 local Players = game:GetService("Players")
@@ -8,114 +8,160 @@ local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local GuiService = game:GetService("GuiService")
 
--- الإعدادات الأساسية
+-- إعدادات متوافقة مع الآيباد
 local guiVisible = true
 local superSpeed = 50
 local superJump = 100
-local espEnabled = false
 local noclipEnabled = false
+local flyEnabled = false
+local speedType = "Normal" -- Normal / Sprint / Turbo
 
--- تأكد من وجود اللاعب
-repeat task.wait() until LocalPlayer.Character
+-- إنشاء واجهة تعمل باللمس
+local TouchGUI = Instance.new("ScreenGui")
+TouchGUI.Name = "iPadHUD"
+TouchGUI.DisplayOrder = 999
+TouchGUI.Parent = GuiService
 
--- واجهة المستخدم المحسنة
-local EliteGUI = Instance.new("ScreenGui")
-EliteGUI.Name = "EliteHUD_V2"
-EliteGUI.Parent = game:GetService("CoreGui")
+-- إطار التحكم الرئيسي
+local ControlFrame = Instance.new("Frame")
+ControlFrame.Size = UDim2.new(0.25, 0, 0.35, 0)
+ControlFrame.Position = UDim2.new(0.72, 0, 0.6, 0)
+ControlFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+ControlFrame.BackgroundTransparency = 0.15
+ControlFrame.BorderSizePixel = 0
+ControlFrame.Parent = TouchGUI
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0.2, 0, 0.3, 0)
-MainFrame.Position = UDim2.new(0.78, 0, 0.05, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-MainFrame.BackgroundTransparency = 0.2
-MainFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
-MainFrame.BorderSizePixel = 2
-MainFrame.Parent = EliteGUI
+-- لوحة السرعة
+local SpeedPanel = Instance.new("Frame")
+SpeedPanel.Size = UDim2.new(0.9, 0, 0.2, 0)
+SpeedPanel.Position = UDim2.new(0.05, 0, 0.05, 0)
+SpeedPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+SpeedPanel.Parent = ControlFrame
 
--- عناصر التحكم
-local Title = Instance.new("TextLabel")
-Title.Text = "⚡ SPEED CONTROL ⚡"
-Title.TextColor3 = Color3.new(0, 1, 1)
-Title.Font = Enum.Font.SciFi
-Title.Size = UDim2.new(1, 0, 0.1, 0)
-Title.BackgroundTransparency = 1
-Title.Parent = MainFrame
+local SpeedInput = Instance.new("TextBox")
+SpeedInput.Size = UDim2.new(0.6, 0, 0.8, 0)
+SpeedInput.Position = UDim2.new(0.2, 0, 0.1, 0)
+SpeedInput.Text = tostring(superSpeed)
+SpeedInput.PlaceholderText = "أدخل السرعة"
+SpeedInput.TextColor3 = Color3.new(1, 1, 1)
+SpeedInput.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+SpeedInput.Font = Enum.Font.Code
+SpeedInput.TextSize = 18
+SpeedInput.Parent = SpeedPanel
 
--- سلايدر السرعة
-local SpeedSlider = Instance.new("Frame")
-SpeedSlider.Size = UDim2.new(0.9, 0, 0.1, 0)
-SpeedSlider.Position = UDim2.new(0.05, 0, 0.15, 0)
-SpeedSlider.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-SpeedSlider.Parent = MainFrame
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Text = "السرعة:"
+SpeedLabel.Size = UDim2.new(0.15, 0, 0.8, 0)
+SpeedLabel.Position = UDim2.new(0.02, 0, 0.1, 0)
+SpeedLabel.TextColor3 = Color3.new(1, 1, 1)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Font = Enum.Font.Arabic
+SpeedLabel.TextSize = 18
+SpeedLabel.Parent = SpeedPanel
 
-local SpeedValue = Instance.new("TextLabel")
-SpeedValue.Text = "السرعة: "..superSpeed
-SpeedValue.TextColor3 = Color3.new(1, 1, 1)
-SpeedValue.Font = Enum.Font.Code
-SpeedValue.Size = UDim2.new(1, 0, 1, 0)
-SpeedValue.BackgroundTransparency = 1
-SpeedValue.Parent = SpeedSlider
+-- أنواع السرعة
+local SpeedTypes = {"عادي", "عدو", "تيربو"}
+local SpeedButtons = {}
 
--- سلايدر القفز
-local JumpSlider = Instance.new("Frame")
-JumpSlider.Size = UDim2.new(0.9, 0, 0.1, 0)
-JumpSlider.Position = UDim2.new(0.05, 0, 0.3, 0)
-JumpSlider.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-JumpSlider.Parent = MainFrame
-
-local JumpValue = Instance.new("TextLabel")
-JumpValue.Text = "القفز: "..superJump
-JumpValue.TextColor3 = Color3.new(1, 1, 1)
-JumpValue.Font = Enum.Font.Code
-JumpValue.Size = UDim2.new(1, 0, 1, 0)
-JumpValue.BackgroundTransparency = 1
-JumpValue.Parent = JumpSlider
-
--- أزرار التحكم
-local function CreateButton(text, yPos, toggleVar)
+for i, speed in ipairs(SpeedTypes) do
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.9, 0, 0.12, 0)
+    btn.Size = UDim2.new(0.28, 0, 0.15, 0)
+    btn.Position = UDim2.new(0.05 + (i-1)*0.31, 0, 0.3, 0)
+    btn.Text = speed
+    btn.Font = Enum.Font.Arabic
+    btn.TextSize = 16
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.BackgroundColor3 = i == 1 and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(40, 40, 50)
+    btn.Parent = ControlFrame
+    
+    btn.MouseButton1Click:Connect(function()
+        speedType = SpeedTypes[i]
+        for _, button in ipairs(SpeedButtons) do
+            button.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+        end
+        btn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+        
+        -- تعيين السرعة حسب النوع
+        if speedType == "عادي" then
+            superSpeed = 50
+        elseif speedType == "عدو" then
+            superSpeed = 75
+        else
+            superSpeed = 100
+        end
+        SpeedInput.Text = tostring(superSpeed)
+    end)
+    
+    table.insert(SpeedButtons, btn)
+end
+
+-- أزرار التحكم الأساسية
+local function CreateTouchButton(text, yPos, toggleVar, color)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.4, 0, 0.15, 0)
     btn.Position = UDim2.new(0.05, 0, yPos, 0)
     btn.Text = text
-    btn.Font = Enum.Font.SciFi
+    btn.Font = Enum.Font.Arabic
+    btn.TextSize = 18
     btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    btn.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    btn.Parent = MainFrame
+    btn.BackgroundColor3 = color
+    btn.Parent = ControlFrame
     
     btn.MouseButton1Click:Connect(function()
         _G[toggleVar] = not _G[toggleVar]
-        btn.BorderColor3 = _G[toggleVar] and Color3.new(0, 1, 0) or Color3.fromRGB(100, 100, 100)
+        btn.BackgroundColor3 = _G[toggleVar] and Color3.fromRGB(0, 100, 0) or color
     end)
+    
+    return btn
 end
 
-CreateButton("تفعيل السرعة", 0.45, "SpeedEnabled")
-CreateButton("تفعيل القفز", 0.6, "JumpEnabled")
-CreateButton("وضع النوكلب", 0.75, "NoclipEnabled")
+local JumpBtn = CreateTouchButton("قفز عالي", 0.5, "JumpEnabled", Color3.fromRGB(80, 40, 120))
+local FlyBtn = CreateTouchButton("طيران", 0.7, "FlyEnabled", Color3.fromRGB(120, 40, 80))
+local NoclipBtn = CreateTouchButton("نوكلب", 0.5, "NoclipEnabled", Color3.fromRGB(40, 80, 120))
 
--- نظام السرعة المعدل
+-- نظام السرعة الذكي
+SpeedInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local newSpeed = tonumber(SpeedInput.Text)
+        if newSpeed and newSpeed >= 16 and newSpeed <= 150 then
+            superSpeed = newSpeed
+        else
+            SpeedInput.Text = tostring(superSpeed)
+        end
+    end
+end)
+
+-- نظام الحركة الأساسي
 RunService.Heartbeat:Connect(function()
     if LocalPlayer.Character then
         local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if humanoid then
+            -- السرعة
             if _G.SpeedEnabled then
                 humanoid.WalkSpeed = superSpeed
             else
-                humanoid.WalkSpeed = 16 -- السرعة العادية
+                humanoid.WalkSpeed = 16
             end
             
+            -- القفز
             if _G.JumpEnabled then
                 humanoid.JumpPower = superJump
             else
-                humanoid.JumpPower = 50 -- القفزة العادية
+                humanoid.JumpPower = 50
+            end
+            
+            -- الطيران
+            if _G.FlyEnabled then
+                humanoid:ChangeState(Enum.HumanoidStateType.Flying)
             end
         end
     end
 end)
 
 -- نظام النوكلب
-local function NoclipLoop()
+RunService.Stepped:Connect(function()
     if _G.NoclipEnabled and LocalPlayer.Character then
         for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
@@ -123,51 +169,22 @@ local function NoclipLoop()
             end
         end
     end
-end
+end)
 
-RunService.Stepped:Connect(NoclipLoop)
+-- إخفاء الواجهة باللمس
+local HideButton = CreateTouchButton("إخفاء", 0.7, nil, Color3.fromRGB(100, 0, 0))
+HideButton.MouseButton1Click:Connect(function()
+    guiVisible = not guiVisible
+    TouchGUI.Enabled = guiVisible
+end)
 
--- تحديث السلايدرات
-local function UpdateSliders()
-    SpeedValue.Text = "السرعة: "..superSpeed
-    JumpValue.Text = "القفز: "..superJump
-    
-    -- تحريك السلايدر
-    UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-                local mousePos = UserInputService:GetMouseLocation()
-                local sliderPos = SpeedSlider.AbsolutePosition
-                local sliderSize = SpeedSlider.AbsoluteSize
-                
-                if mousePos.X >= sliderPos.X and mousePos.X <= sliderPos.X + sliderSize.X and
-                   mousePos.Y >= sliderPos.Y and mousePos.Y <= sliderPos.Y + sliderSize.Y then
-                    local percent = (mousePos.X - sliderPos.X) / sliderSize.X
-                    superSpeed = math.floor(16 + (100 - 16) * percent)
-                end
-                
-                sliderPos = JumpSlider.AbsolutePosition
-                sliderSize = JumpSlider.AbsoluteSize
-                
-                if mousePos.X >= sliderPos.X and mousePos.X <= sliderPos.X + sliderSize.X and
-                   mousePos.Y >= sliderPos.Y and mousePos.Y <= sliderPos.Y + sliderSize.Y then
-                    local percent = (mousePos.X - sliderPos.X) / sliderSize.X
-                    superJump = math.floor(50 + (200 - 50) * percent)
-                end
-            end
-        end
-    end)
-end
-
-UpdateSliders()
-
--- إخفاء الواجهة
+-- دعم لوحة المفاتيح
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightShift then
         guiVisible = not guiVisible
-        EliteGUI.Enabled = guiVisible
+        TouchGUI.Enabled = guiVisible
     end
 end)
 
 -- رسالة التفعيل
-print("🎮 تم تحميل سكربت التحكم بنجاح | اضغط RightShift لإخفاء الواجهة")
+print("📱 تم تحميل سكربت الآيباد بنجاح | اضغط على زر الإخفاء أو RightShift") 
