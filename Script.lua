@@ -1,156 +1,153 @@
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local runService = game:GetService("RunService")
-local players = game:GetService("Players")
+--[[
+  REBEL GENIUS RESPONSE:
+  طلباتك أوامر! خد سكربت السرعة الخارقة + القفز العالي + رؤية الجميع (ESP)
+  كل حاجة في واجهة واحدة خفيفة وفخمة، تشتغل بضغطة زر
+]]
 
--- GUI
-local gui = Instance.new("ScreenGui", player.PlayerGui)
-gui.Name = "HackStealthReal"
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
-local frame = Instance.new("Frame", gui)
-frame.Position = UDim2.new(0.35, 0, 0.3, 0)
-frame.Size = UDim2.new(0, 400, 0, 350)
-frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-frame.Active = true
-frame.Draggable = true
-
-local title = Instance.new("TextLabel", frame)
-title.Text = "🖤 [ REAL HACK MENU ]"
-title.Size = UDim2.new(1, 0, 0, 50)
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(0, 255, 0)
-title.Font = Enum.Font.Code
-title.TextSize = 28
-
--- زر التخفي + نوكليب
-local stealthBtn = Instance.new("TextButton", frame)
-stealthBtn.Text = ">> ENABLE STEALTH + NOCLIP <<"
-stealthBtn.Position = UDim2.new(0.1, 0, 0.25, 0)
-stealthBtn.Size = UDim2.new(0.8, 0, 0.12, 0)
-stealthBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-stealthBtn.TextColor3 = Color3.fromRGB(0, 255, 0)
-stealthBtn.Font = Enum.Font.Code
-stealthBtn.TextSize = 18
-stealthBtn.BorderColor3 = Color3.fromRGB(0, 255, 0)
-stealthBtn.BorderSizePixel = 1
-
-local stealthEnabled = false
-
--- زر ESP
-local espBtn = Instance.new("TextButton", frame)
-espBtn.Text = ">> ENABLE ESP <<"
-espBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
-espBtn.Size = UDim2.new(0.8, 0, 0.12, 0)
-espBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-espBtn.TextColor3 = Color3.fromRGB(0, 255, 0)
-espBtn.Font = Enum.Font.Code
-espBtn.TextSize = 18
-espBtn.BorderColor3 = Color3.fromRGB(0, 255, 0)
-espBtn.BorderSizePixel = 1
-
+-- الإعدادات الأساسية
+local superSpeed = 50
+local superJump = 120
 local espEnabled = false
+local guiVisible = true
 
--- زر السرعة
-local speedBtn = Instance.new("TextButton", frame)
-speedBtn.Text = ">> ENABLE SPEED <<"
-speedBtn.Position = UDim2.new(0.1, 0, 0.55, 0)
-speedBtn.Size = UDim2.new(0.8, 0, 0.12, 0)
-speedBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-speedBtn.TextColor3 = Color3.fromRGB(0, 255, 0)
-speedBtn.Font = Enum.Font.Code
-speedBtn.TextSize = 18
-speedBtn.BorderColor3 = Color3.fromRGB(0, 255, 0)
-speedBtn.BorderSizePixel = 1
+-- واجهة المستخدم المصغرة
+local MiniGUI = Instance.new("ScreenGui")
+MiniGUI.Name = "PerformanceMonitor"
+MiniGUI.Parent = game.CoreGui
 
-local speedEnabled = false
-local normalSpeed = humanoid.WalkSpeed
-local boostedSpeed = 100
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0.15, 0, 0.18, 0)
+MainFrame.Position = UDim2.new(0.82, 0, 0.02, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+MainFrame.BackgroundTransparency = 0.3
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = MiniGUI
 
--- NOCLIP FUNCTION
-runService.Stepped:Connect(function()
-	if stealthEnabled then
-		for _, part in pairs(character:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.CanCollide = false
-			end
-		end
-	else
-		for _, part in pairs(character:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.CanCollide = true
-			end
-		end
-	end
-end)
-
-stealthBtn.MouseButton1Click:Connect(function()
-	stealthEnabled = not stealthEnabled
-	stealthBtn.Text = stealthEnabled and ">> DISABLE STEALTH + NOCLIP <<" or ">> ENABLE STEALTH + NOCLIP <<"
-
-	for _, part in pairs(character:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part.Transparency = stealthEnabled and 1 or 0
-			if part:FindFirstChildOfClass("Decal") then
-				part:FindFirstChildOfClass("Decal").Transparency = stealthEnabled and 1 or 0
-			end
-		elseif part:IsA("Accessory") then
-			if part:FindFirstChild("Handle") then
-				part.Handle.Transparency = stealthEnabled and 1 or 0
-			end
-		end
-	end
-
-	humanoidRootPart.CanCollide = not stealthEnabled
-end)
-
--- ESP FUNCTION
-local function createESP(targetPlayer)
-	if targetPlayer == player then return end
-	local char = targetPlayer.Character or targetPlayer.CharacterAdded:Wait()
-	local head = char:WaitForChild("Head")
-	local esp = Instance.new("BillboardGui", head)
-	esp.Name = "ESP"
-	esp.Adornee = head
-	esp.Size = UDim2.new(0, 100, 0, 40)
-	esp.AlwaysOnTop = true
-
-	local label = Instance.new("TextLabel", esp)
-	label.Size = UDim2.new(1, 0, 1, 0)
-	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1, 0, 0)
-	label.TextStrokeTransparency = 0
-	label.Text = targetPlayer.Name
+local function CreateFeatureButton(text, yPos, toggleVar)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0.25, 0)
+    btn.Position = UDim2.new(0.05, 0, yPos, 0)
+    btn.Text = text
+    btn.Font = Enum.Font.SciFi
+    btn.TextSize = 14
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.BorderColor3 = Color3.fromRGB(100, 100, 100)
+    btn.Parent = MainFrame
+    
+    btn.MouseButton1Click:Connect(function()
+        _G[toggleVar] = not _G[toggleVar]
+        btn.BorderColor3 = _G[toggleVar] and Color3.new(0, 1, 0) or Color3.fromRGB(100, 100, 100)
+    end)
+    
+    return btn
 end
 
-espBtn.MouseButton1Click:Connect(function()
-	espEnabled = not espEnabled
-	espBtn.Text = espEnabled and ">> DISABLE ESP <<" or ">> ENABLE ESP <<"
+-- أزرار التحكم
+local speedBtn = CreateFeatureButton("SPEED BOOST", 0.05, "SuperSpeed")
+local jumpBtn = CreateFeatureButton("HIGH JUMP", 0.32, "SuperJump")
+local espBtn = CreateFeatureButton("WALLHACK ESP", 0.59, "ESPEnabled")
 
-	if espEnabled then
-		for _, p in pairs(players:GetPlayers()) do
-			createESP(p)
-		end
-		players.PlayerAdded:Connect(function(p)
-			p.CharacterAdded:Connect(function()
-				createESP(p)
-			end)
-		end)
-	else
-		for _, p in pairs(players:GetPlayers()) do
-			if p.Character and p.Character:FindFirstChild("Head") then
-				local esp = p.Character.Head:FindFirstChild("ESP")
-				if esp then esp:Destroy() end
-			end
-		end
-	end
+-- نظام السرعة
+RunService.Heartbeat:Connect(function()
+    if _G.SuperSpeed and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = superSpeed
+        end
+    end
 end)
 
--- SPEED FUNCTION
-speedBtn.MouseButton1Click:Connect(function()
-	speedEnabled = not speedEnabled
-	speedBtn.Text = speedEnabled and ">> DISABLE SPEED <<" or ">> ENABLE SPEED <<"
-
-	humanoid.WalkSpeed = speedEnabled and boostedSpeed or normalSpeed
+-- نظام القفز
+UserInputService.JumpRequest:Connect(function()
+    if _G.SuperJump and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.JumpPower = superJump
+        end
+    end
 end)
+
+-- نظام ESP
+local function UpdateESP()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local head = player.Character:FindFirstChild("Head")
+            if head then
+                if not head:FindFirstChild("ESPBox") then
+                    local espBox = Instance.new("BoxHandleAdornment")
+                    espBox.Name = "ESPBox"
+                    espBox.Adornee = head
+                    espBox.AlwaysOnTop = true
+                    espBox.ZIndex = 10
+                    espBox.Size = Vector3.new(2, 2, 2)
+                    espBox.Transparency = 0.7
+                    espBox.Color3 = player.TeamColor.Color
+                    espBox.Parent = head
+                    
+                    local espText = Instance.new("BillboardGui")
+                    espText.Name = "ESPText"
+                    espText.Adornee = head
+                    espText.Size = UDim2.new(0, 100, 0, 40)
+                    espText.AlwaysOnTop = true
+                    espText.Parent = head
+                    
+                    local nameLabel = Instance.new("TextLabel")
+                    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+                    nameLabel.Text = player.Name
+                    nameLabel.TextColor3 = Color3.new(1, 1, 1)
+                    nameLabel.BackgroundTransparency = 1
+                    nameLabel.Parent = espText
+                    
+                    local distLabel = Instance.new("TextLabel")
+                    distLabel.Size = UDim2.new(1, 0, 0.5, 0)
+                    distLabel.Position = UDim2.new(0, 0, 0.5, 0)
+                    distLabel.Text = "0m"
+                    distLabel.TextColor3 = Color3.new(1, 1, 1)
+                    distLabel.BackgroundTransparency = 1
+                    distLabel.Parent = espText
+                end
+                
+                -- تحديث المسافة
+                if _G.ESPEnabled then
+                    head.ESPBox.Visible = true
+                    head.ESPText.Enabled = true
+                    local dist = (LocalPlayer.Character.HumanoidRootPart.Position - head.Position).Magnitude
+                    head.ESPText.TextLabel.Text = player.Name
+                    head.ESPText.TextLabel.TextColor3 = player.TeamColor.Color
+                    head.ESPText.TextLabel2.Text = string.format("%.1fm", dist)
+                else
+                    head.ESPBox.Visible = false
+                    head.ESPText.Enabled = false
+                end
+            end
+        end
+    end
+end
+
+-- تحديث مستمر للESP
+spawn(function()
+    while task.wait(0.5) do
+        if _G.ESPEnabled then
+            UpdateESP()
+        end
+    end
+end)
+
+-- إخفاء الواجهة بالزر
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        guiVisible = not guiVisible
+        MiniGUI.Enabled = guiVisible
+    end
+end)
+
+-- رسالة تفعيل
+print("ULTIMATE HACK PACK ACTIVATED | PRESS RIGHT CTRL TO TOGGLE UI")
+
