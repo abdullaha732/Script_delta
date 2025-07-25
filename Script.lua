@@ -11,8 +11,8 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
 -- الإعدادات الأساسية
-local superSpeed = 50
-local superJump = 120
+local superSpeed = 99
+local superJump = 9999
 local espEnabled = false
 local guiVisible = true
 
